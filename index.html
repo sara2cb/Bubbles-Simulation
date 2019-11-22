@@ -9,6 +9,45 @@
   <body>
     <canvas id="glcanvas"></canvas>
   </body>
+
+  <script id="3d-vertex-shader" type="x-shader/x-vertex">
+    attribute vec4 a_position;
+    attribute vec4 a_color;
+    
+    uniform mat4 u_matrix;
+    uniform float u_fudgeFactor;
+    
+    varying vec4 v_color;
+    
+    void main() {
+      // Multiply the position by the matrix.
+      vec4 position = u_matrix * a_position;
+    
+      // Adjust the z to divide by
+      float zToDivideBy = 1.0 + position.z * u_fudgeFactor;
+    
+      // Divide x and y by z.
+      gl_Position = vec4(position.xy / zToDivideBy, position.zw);
+    
+      // Pass the color to the fragment shader.
+      v_color = a_color;
+    }
+    </script>
+    <!-- fragment shader -->
+    <script id="3d-fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+    
+    // Passed in from the vertex shader.
+    varying vec4 v_color;
+    
+    void main() {
+       gl_FragColor = v_color;
+    }
+    </script>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js" integrity="sha256-+09xst+d1zIS41eAvRDCXOf0MH993E4cS40hKBIJj8Q=" crossorigin="anonymous"></script>
-  <script src="sample.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
+  <script src="https://webglfundamentals.org/webgl/resources/m4.js"></script>
+  <script src="particles.js"></script>
+  
 </html>
