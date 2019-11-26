@@ -7,12 +7,37 @@ const heightBottomCup = -100;
 const radiusCup = 50;
 
 var bubbleData;
-var noParticles = 600;
+var noParticles = 400;
 var sideSpeed = 0.2;
+var DENSITY = 1;
+var VISCOSITY = 2.5;
 
-const maxTimeOut = 2000;
+const maxTimeOut = 4000;
+
+function getTopBubbleMove(Cx, Cy, Px, Py, r){
+  var den = Math.sqrt((Px-Cx)*(Px-Cx) + (Py-Cy)*(Py-Cy))
 
 
+  var tempGr = Math.max(Px, Cx);
+  var tempSm = Math.min(Px, Cx);
+
+  if(Px<0){
+    tempGr = Math.min(Px, Cx);
+    tempSm = Math.max(Px, Cx);
+  }
+
+  var Rx = Cx + r * ((tempGr-tempSm)/den);
+
+  tempGr = Math.max(Py, Cy);
+  tempSm = Math.min(Py, Cy);
+  if(Py<0){
+    tempGr = Math.min(Py, Cy);
+    tempSm = Math.max(Py, Cy);
+  }
+  var Ry = Cy + r * ((tempGr-tempSm)/den);
+
+  return [Rx, Ry];
+}
 
 function getRandomPositionAndSizeInCup(){
   var random = Math.random();
@@ -22,7 +47,7 @@ function getRandomPositionAndSizeInCup(){
     var minRadCup = edges[2];
     var maxRadBubble = sizes[3];
     var minRadBubble = sizes[2];
-    if(random<4/10){
+    if(random<3/10){
       minRadCup = edges[0];
       maxRadCup = edges[1];
       maxRadBubble = sizes[1];
@@ -65,6 +90,32 @@ function radian (degree) {
   return rad;
 }
 
+function setViscosity(){
+  var visc = document.getElementById("liquidViscosity").value;
+  if(visc<=0 || !visc ||visc >20){
+    document.getElementById("liquidViscosity").className = "error";
+    console.log("HEY");
+  }else{
+    VISCOSITY = visc;
+  }
+  
+  console.log(VISCOSITY);
+}
+
+function setNoParticles(){
+  var part = document.getElementById("noParticles").value;
+  if(part<1 || !part ||part >= 1000000){
+    document.getElementById("noParticles").className = "error";
+    console.log("HEY");
+  }else{
+    noParticles = part;
+    noParticles++;
+  }
+  console.log(part);
+  
+  console.log(noParticles);
+}
+
 function main() {
   // Get A WebGL context
   /** @type {HTMLCanvasElement} */
@@ -85,13 +136,16 @@ function main() {
   var matrixLocation = gl.getUniformLocation(program, "u_matrix");
 
 
+  document.getElementById("submitViscosity").addEventListener("click", setViscosity);
+  document.getElementById("submitNoParticles").addEventListener("click", setNoParticles);
+
   //BUBBLES----------------------------------------------------------------------------------------------
 
   bubbleData = new Array(noParticles);
 
   var bubblePoints = createCirclePoints({x: 0, y: heightBottomCup, z:-360}, 1, 0, 0, 0, {x: 0, y:100, z:200});
   
-  for(var i = 0; i<noParticles; i++){
+  for(var i = 0; i<50000; i++){
     bubbleData[i] = {};
 
     var values = getRandomPositionAndSizeInCup();
@@ -183,6 +237,7 @@ function main() {
   drawScene();
 
   var howMany = noParticles/8;
+  if(howMany<1) howMany = 1;
   var counter = 0;
   // Draw the scene.
   function drawScene() {
@@ -216,12 +271,11 @@ function main() {
     }
 
     counter++;
-    if(counter == 1 && howMany< noParticles){
+    if(counter == 1 && howMany != noParticles-1){
       howMany += 1;
-      if(howMany>noParticles){
-        howMany = noParticles-1;
-      }
       counter = 0;
+    }else{
+      howMany = noParticles-1;
     }
     // Call drawScene again next frame
     requestAnimationFrame(drawScene);
@@ -235,6 +289,13 @@ function main() {
       if( data["timeOut"] < 0){
         data["timeOut"] = 0
         data["lastCounted"] = today.getMilliseconds();
+        var maxMovement = getTopBubbleMove(0, 0, data["locations"][0], data["locations"][2], radiusCup-data["radius"]*2);
+        if(Math.abs(data["locations"][0])<Math.abs(maxMovement[0]) && Math.abs(data["locations"][2])<Math.abs(maxMovement[1])){
+          var curDistance =  Math.sqrt((data["locations"][0])*(data["locations"][0])+(data["locations"][2])*(data["locations"][2]));
+          var movementBubbleTop = getTopBubbleMove(0, 0, data["locations"][0], data["locations"][2], curDistance+ 0.1);
+          data["locations"][0] = movementBubbleTop[0];
+          data["locations"][2] = movementBubbleTop[1];
+        }
       }else if(data["timeOut"]<maxTimeOut*(data["radius"]/2.5)){
         var now = today.getMilliseconds();
         if(now<=data["lastCounted"]){
@@ -243,6 +304,13 @@ function main() {
           data["timeOut"] += 59-data["lastCounted"] + now;
         }
         data["lastCounted"] = today.getMilliseconds();
+        var maxMovement = getTopBubbleMove(0, 0, data["locations"][0], data["locations"][2], radiusCup-data["radius"]*2);
+        if(Math.abs(data["locations"][0])<Math.abs(maxMovement[0]) && Math.abs(data["locations"][2])<Math.abs(maxMovement[1])){
+          var curDistance =  Math.sqrt((data["locations"][0])*(data["locations"][0])+(data["locations"][2])*(data["locations"][2]));
+          var movementBubbleTop = getTopBubbleMove(0, 0, data["locations"][0], data["locations"][2], curDistance+ 0.1);
+          data["locations"][0] = movementBubbleTop[0];
+          data["locations"][2] = movementBubbleTop[1];
+        }
       }
       else{
         data["locations"][1] = 0;
@@ -253,7 +321,7 @@ function main() {
         data["timeOut"] = -1
       }
     }else{
-      data["locations"][1] = data["locations"][1] + velocity(1,data["radius"],1.51)/2.5
+      data["locations"][1] = data["locations"][1] + velocity(DENSITY,data["radius"],1.51)/VISCOSITY
     }
 
     // Turn on the position attribute
