@@ -87,5 +87,8 @@ input[type=text]:focus {
   border:2px solid red;
   border-radius: 4px;
   box-sizing: border-box;
-  
+}
+
+.white {
+  color: antiquewhite;
 }

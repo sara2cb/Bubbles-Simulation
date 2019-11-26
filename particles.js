@@ -6,7 +6,13 @@ const heightTopCup = 90;
 const heightBottomCup = -100;
 const radiusCup = 50;
 
+var howMany = 1;
+var toIncreaseHowMany = 1;
 var bubbleData;
+
+var edges = [radiusCup/9,radiusCup*(3/4), radiusCup*(4/5), radiusCup];
+var MAXIMUMBUBBLESIZE = 2.5;
+var MINIMUMBUBBLESIZE = 0.4;
 var noParticles = 400;
 var sideSpeed = 0.2;
 var DENSITY = 1;
@@ -41,22 +47,20 @@ function getTopBubbleMove(Cx, Cy, Px, Py, r){
 
 function getRandomPositionAndSizeInCup(){
   var random = Math.random();
-    var edges = [radiusCup/9,radiusCup*(3/4), radiusCup*(4/5), radiusCup];
-    var sizes = [4/10, 8/10, 15/10, 25/10];
     var maxRadCup = edges[3];
     var minRadCup = edges[2];
-    var maxRadBubble = sizes[3];
-    var minRadBubble = sizes[2];
+    var maxRadBubble = MAXIMUMBUBBLESIZE;
+    var minRadBubble = MAXIMUMBUBBLESIZE - (MAXIMUMBUBBLESIZE-MINIMUMBUBBLESIZE)/3;
     if(random<3/10){
       minRadCup = edges[0];
       maxRadCup = edges[1];
-      maxRadBubble = sizes[1];
-      minRadBubble = sizes[0];
+      maxRadBubble = MINIMUMBUBBLESIZE + (MAXIMUMBUBBLESIZE-MINIMUMBUBBLESIZE)/3;
+      minRadBubble = MINIMUMBUBBLESIZE;
     }else if(random<9/10){
       minRadCup = edges[1];
       maxRadCup = edges[2];
-      maxRadBubble = sizes[2];
-      minRadBubble = sizes[1];
+      maxRadBubble = MAXIMUMBUBBLESIZE - (MAXIMUMBUBBLESIZE-MINIMUMBUBBLESIZE)/3;
+      minRadBubble = MINIMUMBUBBLESIZE + (MAXIMUMBUBBLESIZE-MINIMUMBUBBLESIZE)/3;
     }
 
     var u = Math.random()+Math.random();
@@ -91,7 +95,7 @@ function radian (degree) {
 }
 
 function setViscosity(){
-  var visc = document.getElementById("liquidViscosity").value;
+  var visc =  parseFloat(document.getElementById("liquidViscosity").value);
   if(visc<=0 || !visc ||visc >20){
     document.getElementById("liquidViscosity").className = "error";
     console.log("HEY");
@@ -103,17 +107,65 @@ function setViscosity(){
 }
 
 function setNoParticles(){
-  var part = document.getElementById("noParticles").value;
-  if(part<1 || !part ||part >= 1000000){
+  var part =  parseInt(document.getElementById("noParticles").value);
+  if(part<1 || !part ||part > 1000000){
     document.getElementById("noParticles").className = "error";
     console.log("HEY");
   }else{
     noParticles = part;
-    noParticles++;
+    // noParticles++;
   }
   console.log(part);
   
   console.log(noParticles);
+}
+
+function setBubbleSizes(){
+  var max = parseFloat(document.getElementById("maxBubbleSize").value);
+  var min = parseFloat(document.getElementById("minBubbleSize").value);
+  if(max<0.1 || !max ||max > 10 || min<0.1 || !min ||min > 10 || min>max){
+    document.getElementById("maxBubbleSize").className = "error";
+    document.getElementById("minBubbleSize").className = "error";
+  }else{
+    MAXIMUMBUBBLESIZE = max;
+    MINIMUMBUBBLESIZE = min;
+  }
+  
+  console.log(MAXIMUMBUBBLESIZE);
+  console.log(MINIMUMBUBBLESIZE);
+}
+
+function addBubbleBuffer(gl, bubblePoints){
+  bubbleData.push({});
+  var i =bubbleData.length-1;
+
+  // console.log(i);
+
+  var values = getRandomPositionAndSizeInCup();
+  var centerX = values[0];
+  var centerZ = values[1];
+
+  var radiusBubble = values[2];
+
+  // Create a buffer to put positions in
+  bubbleData[i]["PositionBuffer"] = gl.createBuffer();
+  // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = bubblePositionBuffer)
+  gl.bindBuffer(gl.ARRAY_BUFFER, bubbleData[i]["PositionBuffer"]);
+
+  // Put geometry data into buffer
+  setBubbleGeometry(gl, bubblePoints);
+
+  // Create a buffer to put colors in
+  bubbleData[i]["ColourBuffer"] = gl.createBuffer();
+  // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = colorBuffer)
+  gl.bindBuffer(gl.ARRAY_BUFFER, bubbleData[i]["ColourBuffer"]);
+  // Put geometry data into buffer
+  setBubbleColors(gl, bubblePoints);
+
+  bubbleData[i]["locations"] = [centerX, radiusBubble, centerZ];
+  bubbleData[i]["radius"] = radiusBubble;
+  bubbleData[i]["sideSpeed"] = 0.2;
+  bubbleData[i]["timeOut"] = -1
 }
 
 function main() {
@@ -138,41 +190,17 @@ function main() {
 
   document.getElementById("submitViscosity").addEventListener("click", setViscosity);
   document.getElementById("submitNoParticles").addEventListener("click", setNoParticles);
+  document.getElementById("submitNewSizes").addEventListener("click", setBubbleSizes);
 
   //BUBBLES----------------------------------------------------------------------------------------------
 
-  bubbleData = new Array(noParticles);
+  // bubbleData = new Array(noParticles);
+  bubbleData = [];
 
   var bubblePoints = createCirclePoints({x: 0, y: heightBottomCup, z:-360}, 1, 0, 0, 0, {x: 0, y:100, z:200});
   
-  for(var i = 0; i<50000; i++){
-    bubbleData[i] = {};
-
-    var values = getRandomPositionAndSizeInCup();
-    var centerX = values[0];
-    var centerZ = values[1];
-
-    var radiusBubble = values[2];
-
-    // Create a buffer to put positions in
-    bubbleData[i]["PositionBuffer"] = gl.createBuffer();
-    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = bubblePositionBuffer)
-    gl.bindBuffer(gl.ARRAY_BUFFER, bubbleData[i]["PositionBuffer"]);
-
-    // Put geometry data into buffer
-    setBubbleGeometry(gl, bubblePoints);
-
-    // Create a buffer to put colors in
-    bubbleData[i]["ColourBuffer"] = gl.createBuffer();
-    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = colorBuffer)
-    gl.bindBuffer(gl.ARRAY_BUFFER, bubbleData[i]["ColourBuffer"]);
-    // Put geometry data into buffer
-    setBubbleColors(gl, bubblePoints);
-
-    bubbleData[i]["locations"] = [centerX, radiusBubble, centerZ];
-    bubbleData[i]["radius"] = radiusBubble;
-    bubbleData[i]["sideSpeed"] = 0.2;
-    bubbleData[i]["timeOut"] = -1
+  for(var i = 0; i<100000; i++){
+    addBubbleBuffer(gl, bubblePoints);
   }
 
   console.log(bubbleData);
@@ -236,7 +264,7 @@ function main() {
 
   drawScene();
 
-  var howMany = noParticles/8;
+  
   if(howMany<1) howMany = 1;
   var counter = 0;
   // Draw the scene.
@@ -270,12 +298,19 @@ function main() {
       animationCircle(bubbleData[i], bubbleData[i]["PositionBuffer"], bubbleData[i]["ColourBuffer"]);
     }
 
-    counter++;
-    if(counter == 1 && howMany != noParticles-1){
-      howMany += 1;
-      counter = 0;
+    if(noParticles-howMany>500){
+      toIncreaseHowMany = Math.round((noParticles-howMany)/500);
     }else{
-      howMany = noParticles-1;
+      toIncreaseHowMany = 1;
+    }
+    howMany += toIncreaseHowMany
+    document.getElementById("particlesTag").innerHTML = "Number of Particles: " + howMany;
+    if(howMany >= noParticles-1){
+      if(bubbleData.length < noParticles){
+        addBubbleBuffer()
+      }else{
+        howMany = noParticles-1;
+      }
     }
     // Call drawScene again next frame
     requestAnimationFrame(drawScene);
@@ -289,25 +324,30 @@ function main() {
       if( data["timeOut"] < 0){
         data["timeOut"] = 0
         data["lastCounted"] = today.getMilliseconds();
+
         var maxMovement = getTopBubbleMove(0, 0, data["locations"][0], data["locations"][2], radiusCup-data["radius"]*2);
+
         if(Math.abs(data["locations"][0])<Math.abs(maxMovement[0]) && Math.abs(data["locations"][2])<Math.abs(maxMovement[1])){
           var curDistance =  Math.sqrt((data["locations"][0])*(data["locations"][0])+(data["locations"][2])*(data["locations"][2]));
           var movementBubbleTop = getTopBubbleMove(0, 0, data["locations"][0], data["locations"][2], curDistance+ 0.1);
           data["locations"][0] = movementBubbleTop[0];
           data["locations"][2] = movementBubbleTop[1];
         }
-      }else if(data["timeOut"]<maxTimeOut*(data["radius"]/2.5)){
+
+      }else if(data["timeOut"]<maxTimeOut*(data["radius"]+VISCOSITY)){
         var now = today.getMilliseconds();
         if(now<=data["lastCounted"]){
           data["timeOut"] += data["lastCounted"]-now;
         }else{
-          data["timeOut"] += 59-data["lastCounted"] + now;
+          data["timeOut"] += 999-data["lastCounted"] + now;
         }
+
         data["lastCounted"] = today.getMilliseconds();
         var maxMovement = getTopBubbleMove(0, 0, data["locations"][0], data["locations"][2], radiusCup-data["radius"]*2);
+
         if(Math.abs(data["locations"][0])<Math.abs(maxMovement[0]) && Math.abs(data["locations"][2])<Math.abs(maxMovement[1])){
           var curDistance =  Math.sqrt((data["locations"][0])*(data["locations"][0])+(data["locations"][2])*(data["locations"][2]));
-          var movementBubbleTop = getTopBubbleMove(0, 0, data["locations"][0], data["locations"][2], curDistance+ 0.1);
+          var movementBubbleTop = getTopBubbleMove(0, 0, data["locations"][0], data["locations"][2], curDistance+ 1/VISCOSITY);
           data["locations"][0] = movementBubbleTop[0];
           data["locations"][2] = movementBubbleTop[1];
         }
@@ -318,7 +358,7 @@ function main() {
         data["locations"][0] = values[0];
         data["locations"][2] = values[1];
         data["radius"] = values[2];
-        data["timeOut"] = -1
+        data["timeOut"] = -1;
       }
     }else{
       data["locations"][1] = data["locations"][1] + velocity(DENSITY,data["radius"],1.51)/VISCOSITY
