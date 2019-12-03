@@ -15,17 +15,33 @@
         
         <div class="splitSmall right">
           <div class="topright">
-              <input class="notError" type="number" id="liquidViscosity" name="liquidViscosity" value=2.5 min="0.1" max="20" step=0.1>
-              <input type="submit" id="submitViscosity" value="Submit">
+              <p class="white">Viscosity: </p>
+              <input class="notError" type="number" id="liquidViscosity" name="liquidViscosity" step=0.1>
+              <input type="submit" id="submitViscosity" value="Update">
+              <p class="red" id="errorViscosity"> </p>
 
-              <input class="notError" type="number" id="noParticles" name="noParticles" value=400 min="1" max="1000000" step=100>
-              <input type="submit" id="submitNoParticles" value="Submit">
+              <p class="white">Number of particles: </p>
+              <input class="notError" type="number" id="noParticles" name="noParticles" step=100>
+              <input type="submit" id="submitNoParticles" value="Update">
+              <p class="red" id="errorNoParticles"> </p>
 
-              <input class="notError" type="number" id="minBubbleSize" name="minBubbleSize" value=0.4 min="1" max="10" step=0.1>
-              <input class="notError" type="number" id="maxBubbleSize" name="maxBubbleSize" value=2.5 min="1.1" max="10" step=0.1>
-              <input type="submit" id="submitNewSizes" value="Submit">
+              <p class="white">Minimum radius of particles: </p>
+              <input class="notError" type="number" id="minBubbleSize" name="minBubbleSize" step=0.1>
+              <input type="submit" id="submitMin" value="Update">
+              <p class="red" id="errorMin"> </p>
+
+              <p class="white">Maximum radius of particles: </p>
+              <input class="notError" type="number" id="maxBubbleSize" name="maxBubbleSize" step=0.1>
+              <input type="submit" id="submitMax" value="Update">
+              <p class="red" id="errorMax"> </p>
 
               <p id="particlesTag" class="white">Number of Particles: </p>
+              <p id="frameDuration" class="white">Frame Duration: </p>
+              <p id="framerate" class="white">Framerate: </p>
+              <p id="averageDurationAllParticle" class="white">Total particle rendering duration: </p>
+              <p id="durationBufferBinding" class="white">Buffer binding duration: </p>
+              <p id="durationSceneTransformation" class="white">Tranforming scene duration: </p>
+              <p id="durationSceneDrawing" class="white">Drawing Scene duration: </p>
 
           </div>
         </div>
